@@ -61,18 +61,19 @@ int cam_init()
     memset(&format,0,sizeof(format));
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; //frame's type to capture;
 
-    format.fmt.pix.pixelformat = V4L2_PIX_FMT_SGRBG10; //10bit raw
+    format.fmt.pix.pixelformat = V4L2_PIX_FMT_SBGGR10; //10bit raw
+    //format.fmt.pix.pixelformat = V4L2_PIX_FMT_SGRBG10; //10bit raw
     format.fmt.pix.width = IMG_WIDTH;
     format.fmt.pix.height = IMG_HEIGHT;
-    ret = ioctl(cam_fd,VIDIOC_TRY_FMT,&format);//try to set the format
-
-    if(ret !=0)
-    {
-        DBG("ioctl(VIDIOC_TRY_FMT) failed %d(%s)\n",errno,strerror(errno));
-        return ret;
-    }
-
-    format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+//     ret = ioctl(cam_fd,VIDIOC_TRY_FMT,&format);//try to set the format
+// 
+//     if(ret !=0)
+//     {
+//         DBG("ioctl(VIDIOC_TRY_FMT) failed %d(%s)\n",errno,strerror(errno));
+//         return ret;
+//     }
+// 
+//     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     ret = ioctl(cam_fd,VIDIOC_S_FMT,&format); // set the format
 
@@ -137,7 +138,7 @@ int cam_init()
 
     buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buffer.memory = V4L2_MEMORY_MMAP;
-    buffer.index=1;
+    buffer.index =i;
     ret = ioctl(cam_fd,VIDIOC_QBUF,&buffer);
     if(ret!=0)
     {
@@ -226,6 +227,7 @@ int main()
 
         char filename[32];
         sprintf(filename,"./rawout/%05d.raw",count++);
+        printf("writing in %s...\n",filename);
         int fd = open(filename,O_WRONLY|O_CREAT,00700); //save image data
         if(fd>=0)
         {
