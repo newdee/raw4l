@@ -19,6 +19,7 @@
 #define IMG_HEIGHT 2160
 #define IMG_SIZE (IMG_WIDTH*IMG_HEIGHT*2)
 #define BUF_CNT 5 //request 5 buffers
+#define PIX_FMT V4L2_PIX_FMT_SRGGB10
 
 
 int cam_fd=-1;
@@ -61,21 +62,21 @@ int cam_init()
     memset(&format,0,sizeof(format));
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE; //frame's type to capture;
 
-    format.fmt.pix.pixelformat = V4L2_PIX_FMT_SBGGR10; //10bit raw
-    //format.fmt.pix.pixelformat = V4L2_PIX_FMT_SGRBG10; //10bit raw
+    format.fmt.pix.pixelformat = PIX_FMT; //CAPTURE  SETTING!! 10bit raw FORMAT!!
     format.fmt.pix.width = IMG_WIDTH;
     format.fmt.pix.height = IMG_HEIGHT;
-//     ret = ioctl(cam_fd,VIDIOC_TRY_FMT,&format);//try to set the format
-// 
-//     if(ret !=0)
-//     {
-//         DBG("ioctl(VIDIOC_TRY_FMT) failed %d(%s)\n",errno,strerror(errno));
-//         return ret;
-//     }
-// 
-//     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+     ret = ioctl(cam_fd,VIDIOC_TRY_FMT,&format);//try to set the format
+ 
+     if(ret !=0)
+     {
+         DBG("ioctl(VIDIOC_TRY_FMT) failed %d(%s)\n",errno,strerror(errno));
+         return ret;
+     }
+ 
+     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
     ret = ioctl(cam_fd,VIDIOC_S_FMT,&format); // set the format
+    //ret = ioctl(cam_fd,VIDIOC_G_FMT,&format); // get the format
 
     if(ret!=0)
     {
@@ -112,7 +113,8 @@ int cam_init()
     struct v4l2_buffer buffer;
     memset(&buffer,0,sizeof(buffer));
     buffer.memory=V4L2_MEMORY_MMAP;
-    buffer.type = req.type;
+    //buffer.type = req.type;
+    buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 
 
@@ -136,8 +138,8 @@ int cam_init()
         return -1;
     }
 
-    buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buffer.memory = V4L2_MEMORY_MMAP;
+   // buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    //buffer.memory = V4L2_MEMORY_MMAP;
     buffer.index =i;
     ret = ioctl(cam_fd,VIDIOC_QBUF,&buffer);
     if(ret!=0)
@@ -215,19 +217,19 @@ int main()
     ASSERT(ret == 0);
 
     int count=0;
-    while(1);
-    {
+while(count <10)
+  {
         ret = get_img(buf,IMG_SIZE);
         ASSERT(ret == 0);
 
         char tmp[64] = {"---\n"};
-        for(i=0;i<16;i++)
-            sprintf(&tmp[strlen(tmp)],"%02x",buf[i]);
-        SHOW("%s",tmp);
+        //for(i=0;i<16;i++)
+        //    sprintf(&tmp[strlen(tmp)],"%02x\t",buf[i]);
+        //SHOW("%s",tmp);
 
         char filename[32];
         sprintf(filename,"./rawout/%05d.raw",count++);
-        printf("writing in %s...\n",filename);
+        printf("writing in %s...\n\n",filename);
         int fd = open(filename,O_WRONLY|O_CREAT,00700); //save image data
         if(fd>=0)
         {
@@ -239,7 +241,7 @@ int main()
             SHOW("OPEN() failed %d(%s)",errno,strerror(errno));
         }
 
-    }
+}
 
     ret = cam_close();
     ASSERT(ret == 0);
